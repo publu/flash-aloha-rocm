@@ -1,0 +1,5 @@
+stem 3->64 7x7/2             miopen  71.76 ms (  0.5 TF, err 5.8e-03) | triton   9.90 ms (  3.5 TF, err 5.9e-06) rpp=4096 bp=32 bco=64 bk=32 warps=4  speedup 7.25x
+layer1 64->64 3x3            miopen   7.78 ms (  4.4 TF, err 2.1e-03) | triton   7.21 ms (  4.7 TF, err 8.7e-06) rpp=4096 bp=64 bco=64 bk=64 warps=4  speedup 1.08x
+layer2.0 64->128 3x3/2       miopen   2.06 ms (  8.4 TF, err 1.7e-03) | triton   3.88 ms (  4.5 TF, err 2.3e-06) rpp=2048 bp=32 bco=64 bk=128 warps=4  speedup 0.53x
+layer2 down 64->128 1x1/2    miopen   2.07 ms (  0.9 TF, err 1.7e-03) | triton   0.58 ms (  3.3 TF, err 5.8e-06) rpp=4096 bp=64 bco=64 bk=64 warps=4  speedup 3.59x
+layer2 128->128 3x3          miopen   3.76 ms (  9.2 TF, err 1.7e-03) | triton   6.97 ms (  5.0 TF, err 5.7e-06) rpp=2048 bp=32 bco=64 bk=128 warps=4  speedup 0.54x

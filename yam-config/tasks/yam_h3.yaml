@@ -1,0 +1,28 @@
+# Real YAM data: our robot execution recordings converted by tools/convert_h3_recordings.py.
+# Two YAM arms (7 = 6 joints + jaw each), cameras top / left wrist / right wrist, causal 10 Hz grid.
+# Offline training only: robot.type must be arx for Flash's schema; nothing here drives hardware.
+schema_version: 1
+task:
+  name: yam_h3
+control_freq: 10
+data:
+  directory: ~/research/flash-aloha/data
+robot:
+  type: arx
+  arms:
+    left:
+      model: L5
+      can_interface: offline-left
+    right:
+      model: L5
+      can_interface: offline-right
+cameras:
+  names: [top, left, right]
+camera_settings: {}
+collection:
+  max_duration_seconds: 330
+training:
+  observations: [qpos]
+  outputs: [action]
+  state_dim: 14
+  action_dim: 14

@@ -1,0 +1,7 @@
+=== convkernels 14:13:34
+BENCH {"tag": "convkernels", "step_s": 0.9855, "samples_per_s": 129.9, "batch": 128, "data_s_per_batch": 1.8079, "warmup_s": 170.7, "held_loss_after": 0.20235, "env": {"TORCH_ROCM_AOTRITON_ENABLE_EXPE
+=== base3 14:19:07
+BENCH {"tag": "base3", "step_s": 1.1681, "samples_per_s": 109.6, "batch": 128, "data_s_per_batch": 1.6866, "warmup_s": 150.5, "held_loss_after": 0.21242, "env": {"TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENT
+=== convkernels-2 14:24:28
+BENCH {"tag": "convkernels-2", "step_s": 0.9093, "samples_per_s": 140.8, "batch": 128, "data_s_per_batch": 1.2088, "warmup_s": 94.1, "held_loss_after": 0.20449, "env": {"TORCH_ROCM_AOTRITON_ENABLE_EXP
+=== done 14:28:11

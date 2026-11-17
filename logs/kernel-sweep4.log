@@ -1,0 +1,13 @@
+=== base4-1 16:52:23
+BENCH {"tag": "base4-1", "step_s": 1.1527, "samples_per_s": 111.0, "batch": 128, "data_s_per_batch": 1.3086, "warmup_s": 110.6, "held_loss_after": 0.21242, "env": {"TORCH_ROCM_AOTRITON_ENABLE_EXPERIME
+=== v3-1 16:56:51
+BENCH {"tag": "v3-1", "step_s": 0.8992, "samples_per_s": 142.4, "batch": 128, "data_s_per_batch": 1.3418, "warmup_s": 129.8, "held_loss_after": 0.20295, "env": {"TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTA
+=== v3tun-1 17:01:21
+BENCH {"tag": "v3tun-1", "step_s": 0.8378, "samples_per_s": 152.8, "batch": 128, "data_s_per_batch": 1.1165, "warmup_s": 99.0, "held_loss_after": 0.18874, "env": {"PYTORCH_TUNABLEOP_TUNING": "0", "PYT
+=== base4-2 17:05:01
+BENCH {"tag": "base4-2", "step_s": 1.1306, "samples_per_s": 113.2, "batch": 128, "data_s_per_batch": 1.321, "warmup_s": 109.4, "held_loss_after": 0.21242, "env": {"TORCH_ROCM_AOTRITON_ENABLE_EXPERIMEN
+=== v3-2 17:09:24
+BENCH {"tag": "v3-2", "step_s": 0.8598, "samples_per_s": 148.9, "batch": 128, "data_s_per_batch": 1.3179, "warmup_s": 99.8, "held_loss_after": 0.20199, "env": {"TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL
+=== v3tun-2 17:13:09
+BENCH {"tag": "v3tun-2", "step_s": 0.8397, "samples_per_s": 152.4, "batch": 128, "data_s_per_batch": 1.3081, "warmup_s": 106.9, "held_loss_after": 0.19686, "env": {"PYTORCH_TUNABLEOP_TUNING": "0", "PY
+=== done 17:16:59

@@ -1,0 +1,32 @@
+# upstream clone, robot data, checkpoints, third-party page snapshot, caches
+/repo/
+/data/
+/ckpts/
+/web/
+__pycache__/
+*.pyc
+/rocm/tuning/miopen/
+/rocm/tuning/miopen-cache/
+/rocm/install.log
+/rocm/kernels/flash_rocm_kernels.v7.py
+# logs: keep the result files, drop raw run logs (multi-MB CK debug spam)
+/logs/*
+!/logs/bench.jsonl
+!/logs/conv-wgrad-sweep.log
+!/logs/shift-wgrad.log
+!/logs/dgrad.log
+!/logs/dgrad-clean.log
+!/logs/wgrad3x3.log
+!/logs/wgrad3x3-s2-retune.log
+!/logs/conv3x3-fwd.log
+!/logs/kernel-sweep*.log
+!/logs/val-curves.txt
+# local-only: internal data layout, run labels, raw logs, generated dumps
+/tools/out/
+/tools/label_runs.py
+/tools/label_audit.py
+/tools/test_label_runs.py
+/tools/yam_data_census.py
+/tools/action_log_census.py
+/notes/*.log
+/notes/yam-data-census.json

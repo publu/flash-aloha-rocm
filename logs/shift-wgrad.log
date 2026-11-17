@@ -1,0 +1,7 @@
+layer1 64->64 3x3            miopen  21.85 ( 1.6TF err 2e-03) | per-tap mm  25.94 ( 1.3TF err 2e-03) | triton-shift  10.13 ( 3.4TF err 8e-06) cfg=(4096, 64, 64, 64, 4, 1)
+layer2 128->128 3x3          miopen   4.50 ( 7.7TF err 2e-03) | per-tap mm  13.13 ( 2.6TF err 2e-03) | triton-shift   8.10 ( 4.3TF err 7e-06) cfg=(4096, 64, 64, 128, 4, 2)
+layer3 256->256 3x3          miopen   2.49 (14.6TF err 2e-03) | per-tap mm   5.72 ( 6.3TF err 2e-03) | triton-shift   8.25 ( 4.4TF err 9e-06) cfg=(8192, 64, 128, 128, 8, 2)
+layer4 512->512 3x3          miopen   1.99 (18.2TF err 2e-03) | per-tap mm   4.60 ( 7.9TF err 2e-03) | triton-shift   9.76 ( 3.7TF err 3e-06) cfg=(4096, 64, 64, 128, 4, 2)
+layer2 down 64->128 1x1/2    miopen   4.24 ( 0.5TF) | gemm   0.72 ( 2.7TF err 2e-03)
+layer3 down 128->256 1x1/2   miopen   1.31 ( 1.5TF) | gemm   0.58 ( 3.5TF err 2e-03)
+layer4 down 256->512 1x1/2   miopen   0.43 ( 4.7TF) | gemm   0.41 ( 4.9TF err 2e-03)

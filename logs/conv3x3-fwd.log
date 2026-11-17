@@ -1,0 +1,4 @@
+layer1 64: miopen 1.91 ms (17.8 TF, err 2e-03) | triton 1.65 ms (20.6 TF, err 2e-03) speedup 1.16x cfg bp,bco,bci,group,warps,stages=(64, 64, 64, 1, 4, 1)
+layer2 128: miopen 3.50 ms (9.9 TF, err 2e-03) | triton 1.63 ms (21.4 TF, err 2e-03) speedup 2.15x cfg bp,bco,bci,group,warps,stages=(128, 128, 32, 1, 8, 1)
+layer3 256: miopen 3.40 ms (10.7 TF, err 2e-03) | triton 1.64 ms (22.1 TF, err 2e-03) speedup 2.07x cfg bp,bco,bci,group,warps,stages=(64, 64, 64, 8, 4, 2)
+layer4 512: miopen 3.64 ms (10.0 TF, err 2e-03) | triton 1.77 ms (20.5 TF, err 2e-03) speedup 2.06x cfg bp,bco,bci,group,warps,stages=(64, 64, 64, 1, 4, 2)

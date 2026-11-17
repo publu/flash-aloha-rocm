@@ -1,0 +1,5 @@
+=== base2 02:00:11
+BENCH {"tag": "base2", "step_s": 1.0469, "samples_per_s": 122.3, "batch": 128, "data_s_per_batch": 1.8925, "warmup_s": 106.6, "held_loss_after": 0.21242, "env": {"TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL": "1", "PYTORCH_TUNABLEOP_FILENAME": "../rocm/tuning/tunableop_results%d.csv", "MIOPEN_LOG_LEVEL"
+=== stemkernel 02:04:36
+BENCH {"tag": "stemkernel", "step_s": 0.8515, "samples_per_s": 150.3, "batch": 128, "data_s_per_batch": 1392.3013, "warmup_s": 155.1, "held_loss_after": 0.22573, "env": {"TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL": "1", "PYTORCH_TUNABLEOP_FILENAME": "../rocm/tuning/tunableop_results%d.csv", "MIOPEN_LO
+=== stemkernel+tunableop 07:36:38

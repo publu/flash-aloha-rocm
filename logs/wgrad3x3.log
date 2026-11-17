@@ -1,0 +1,4 @@
+layer1 64x64 45x80: miopen 7.60 ms (4.5 TF, err 2e-03) | nopad 1.81 ms (18.8 TF, err 3e-05) speedup 4.20x cfg rpp,bp,bco,bci,warps,stages=(16384, 32, 64, 64, 4, 1)
+layer2 128x128 23x40: miopen 7.63 ms (4.6 TF, err 2e-03) | nopad 2.41 ms (14.4 TF, err 5e-06) speedup 3.17x cfg rpp,bp,bco,bci,warps,stages=(4096, 64, 64, 64, 8, 2)
+layer3 256x256 12x20: miopen 5.01 ms (7.2 TF, err 2e-03) | nopad 2.19 ms (16.6 TF, err 3e-05) speedup 2.29x cfg rpp,bp,bco,bci,warps,stages=(16384, 32, 64, 64, 8, 2)
+layer4 512x512 6x10: miopen 3.37 ms (10.7 TF, err 2e-03) | nopad 2.45 ms (14.8 TF, err 8e-07) speedup 1.38x cfg rpp,bp,bco,bci,warps,stages=(1024, 32, 64, 128, 8, 2)

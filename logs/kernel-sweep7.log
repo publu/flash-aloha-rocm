@@ -1,0 +1,7 @@
+=== tbase7-1 19:49:41
+BENCH {"tag": "tbase7-1", "step_s": 1.1025, "samples_per_s": 116.1, "batch": 128, "data_s_per_batch": 1.6737, "warmup_s": 124.4, "held_loss_after": 0.19895, "en
+=== tv5-1 19:54:22
+BENCH {"tag": "tv5-1", "step_s": 0.7693, "samples_per_s": 166.4, "batch": 128, "data_s_per_batch": 1.236, "warmup_s": 102.8, "held_loss_after": 0.20331, "env": 
+=== tv7-1 19:57:59
+BENCH {"tag": "tv7-1", "step_s": 0.7451, "samples_per_s": 171.8, "batch": 128, "data_s_per_batch": 1.4047, "warmup_s": 106.4, "held_loss_after": 0.19414, "env":
+=== tbase7-2 20:01:47

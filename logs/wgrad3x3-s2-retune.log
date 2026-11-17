@@ -1,0 +1,7 @@
+layer2.0 64->128 /2: miopen 6.48 ms (2.7 TF, err 2e-03) | triton 1.54 ms (11.3 TF, err 1e-06) speedup 4.21x cfg rpp,bp,bco,bci,warps,stages=(1024, 64, 128, 64, 8, 2)
+layer3.0 128->256 /2: miopen 1.31 ms (13.8 TF, err 2e-03) | triton 1.08 ms (16.8 TF, err 1e-05) speedup 1.22x cfg rpp,bp,bco,bci,warps,stages=(8192, 32, 64, 64, 8, 2)
+layer4.0 256->512 /2: miopen 2.22 ms (8.1 TF, err 2e-03) | triton 1.66 ms (10.9 TF, err 2e-06) speedup 1.34x cfg rpp,bp,bco,bci,warps,stages=(2048, 64, 64, 64, 8, 3)
+layer1 s1 retune: miopen 8.09 ms (4.2 TF, err 2e-03) | triton 2.14 ms (15.9 TF, err 6e-06) speedup 3.79x cfg rpp,bp,bco,bci,warps,stages=(4096, 32, 64, 64, 4, 2)
+layer2 s1 retune: miopen 3.22 ms (10.8 TF, err 2e-03) | triton 2.08 ms (16.7 TF, err 3e-05) speedup 1.55x cfg rpp,bp,bco,bci,warps,stages=(16384, 32, 64, 64, 4, 1)
+layer3 s1 retune: miopen 1.97 ms (18.4 TF, err 2e-03) | triton 1.69 ms (21.4 TF, err 3e-05) speedup 1.16x cfg rpp,bp,bco,bci,warps,stages=(16384, 32, 64, 64, 8, 2)
+layer4 s1 retune: miopen 4.86 ms (7.5 TF, err 2e-03) | triton 2.47 ms (14.7 TF, err 4e-06) speedup 1.97x cfg rpp,bp,bco,bci,warps,stages=(4096, 32, 64, 64, 4, 1)

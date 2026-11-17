@@ -1,0 +1,10 @@
+layer1 64->64 3x3          miopen   5.59 ms err 2e-03 | fwd-conv   2.23 ms (3.12x vs 6.97) err 2e-03 | fwd-conv+flip   3.56 ms (2.08x vs 7.41) err 2e-03
+layer2 128->128 3x3        miopen   3.50 ms err 2e-03 | fwd-conv   7.84 ms (0.52x vs 4.05) err 2e-03 | fwd-conv+flip   7.16 ms (0.64x vs 4.60) err 2e-03
+layer3 256->256 3x3        miopen   7.64 ms err 2e-03 | fwd-conv   4.45 ms (1.47x vs 6.56) err 2e-03 | fwd-conv+flip   4.80 ms (1.42x vs 6.83) err 2e-03
+layer4 512->512 3x3        miopen   4.23 ms err 2e-03 | fwd-conv   5.90 ms (1.29x vs 7.62) err 2e-03 | fwd-conv+flip  11.14 ms (0.56x vs 6.21) err 2e-03
+layer2.0 64->128 3x3/2     miopen   4.88 ms err 2e-03 | conv_transpose   3.79 ms (1.15x vs 4.35) err 2e-03
+layer3.0 128->256 3x3/2    miopen   7.14 ms err 2e-03 | conv_transpose   4.35 ms (1.49x vs 6.48) err 2e-03
+layer4.0 256->512 3x3/2    miopen   5.68 ms err 2e-03 | conv_transpose   5.26 ms (1.13x vs 5.96) err 2e-03
+layer2 down 1x1/2          miopen   1.70 ms err 2e-03 | gemm-scatter   1.70 ms (1.18x vs 2.01) err 2e-03
+layer3 down 1x1/2          miopen   0.74 ms err 2e-03 | gemm-scatter   0.98 ms (1.05x vs 1.03) err 2e-03
+layer4 down 1x1/2          miopen   0.91 ms err 2e-03 | gemm-scatter   0.49 ms (1.57x vs 0.77) err 2e-03
