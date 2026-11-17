@@ -20,19 +20,12 @@ WGRAD_CONFIGS = {
     # pad-free 3x3 kernel (conv_wgrad_s1.wgrad3x3), test_wgrad3x3.py on a free GPU, speedup vs MIOpen:
     (64, 64, 3, 1, 1): ('3x3', dict(rows_per_prog=16384, block_p=32, block_co=64, block_ci=64, num_warps=4,
                                     num_stages=1)),             # layer1 4.2x
-    (128, 128, 3, 1, 1): ('3x3', dict(rows_per_prog=16384, block_p=32, block_co=64, block_ci=64, num_warps=4,
-                                      num_stages=1)),           # layer2 3.2x (retuned)
+    (128, 128, 3, 1, 1): ('3x3', dict(rows_per_prog=4096, block_p=64, block_co=64, block_ci=64, num_warps=8,
+                                      num_stages=2)),           # layer2 3.2x
     (256, 256, 3, 1, 1): ('3x3', dict(rows_per_prog=16384, block_p=32, block_co=64, block_ci=64, num_warps=8,
                                       num_stages=2)),           # layer3 2.3x
     (512, 512, 3, 1, 1): ('3x3', dict(rows_per_prog=1024, block_p=32, block_co=64, block_ci=128, num_warps=8,
                                       num_stages=2)),           # layer4 1.4x
-    # stride-2 3x3 (layerN.0.conv1), test_wgrad3x3_s2.py: 4.2x / 1.2x / 1.3x vs MIOpen
-    (64, 128, 3, 2, 1): ('3x3s2', dict(rows_per_prog=1024, block_p=64, block_co=128, block_ci=64, num_warps=8,
-                                       num_stages=2)),
-    (128, 256, 3, 2, 1): ('3x3s2', dict(rows_per_prog=8192, block_p=32, block_co=64, block_ci=64, num_warps=8,
-                                        num_stages=2)),
-    (256, 512, 3, 2, 1): ('3x3s2', dict(rows_per_prog=2048, block_p=64, block_co=64, block_ci=64, num_warps=8,
-                                        num_stages=3)),
     (64, 128, 1, 2, 0): ('pointwise', {}),                    # layer2 downsample: ~5x
     (128, 256, 1, 2, 0): ('pointwise', {}),                   # layer3 downsample: ~2x
 }

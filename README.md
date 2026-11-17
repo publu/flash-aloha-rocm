@@ -23,7 +23,6 @@ Convolution weight/input gradients were the bottleneck: MIOpen/CK ran them at 0.
 |---|---|---|
 | `stem_wgrad.py` — implicit-GEMM wgrad for the 3->64 7x7/2 stem | MIOpen wgrad 66 ms/camera | ~7x |
 | `conv_wgrad_s1.wgrad3x3` — pad-free 3x3/s1 wgrad, one program per kernel row (gy tile reused 3x), fp32 accumulation | CK wgrad | layer1 4.2x, layer2 3.2x, layer3 2.3x, layer4 1.4x |
-| `conv_wgrad_s1.wgrad3x3_s2` — same for 3x3/s2 (layerN.0.conv1) | CK wgrad | 4.2x / 1.2x / 1.3x |
 | `conv_wgrad_s1.pointwise_wgrad` — 1x1/s2 downsample wgrad as one GEMM | MIOpen | 2–5x |
 | input gradient of 3x3/s1 convs as a forward conv with flipped weights; `wflip.py` Triton flip (0.03 ms vs 0.73 ms) | CK bwd-data | 1.2–1.8x |
 | TunableOp (`rocm/tuning/tunableop_results0.csv`) | default hipBLASLt/rocBLAS picks | ~5% of the step |
@@ -33,7 +32,8 @@ Convolution weight/input gradients were the bottleneck: MIOpen/CK ran them at 0.
 it is active. Gradients vs an fp32 reference (pretrained weights, frozen BN): equal to or better than stock
 (`test_grad_vs_fp32.py`).
 
-Measured and left off: Triton forward 3x3 conv (`conv3x3_fwd.py`, `FLASH_ROCM_FWD3X3=1`; ties CK inside the real
+Measured and left off: stride-2 3x3 wgrad (`conv_wgrad_s1.wgrad3x3_s2`; 1.2–4.2x per layer, but no full-step gain:
+v5 0.757 s vs v7 0.770 s, `logs/kernel-sweep7.log`), Triton forward 3x3 conv (`conv3x3_fwd.py`, `FLASH_ROCM_FWD3X3=1`; ties CK inside the real
 step), short-sequence Triton attention (`attn_short.py`; correct, backward slower than AOTriton), MIOpen exhaustive
 find (no gain), `max-autotune` (slower). The transformer GEMMs already run at 24–34 TFLOPs.
 

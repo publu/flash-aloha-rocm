@@ -5,3 +5,9 @@ BENCH {"tag": "tv5-1", "step_s": 0.7693, "samples_per_s": 166.4, "batch": 128, "
 === tv7-1 19:57:59
 BENCH {"tag": "tv7-1", "step_s": 0.7451, "samples_per_s": 171.8, "batch": 128, "data_s_per_batch": 1.4047, "warmup_s": 106.4, "held_loss_after": 0.19414, "env":
 === tbase7-2 20:01:47
+BENCH {"tag": "tbase7-2", "step_s": 1.0754, "samples_per_s": 119.0, "batch": 128, "data_s_per_batch": 1.1862, "warmup_s": 107.5, "held_loss_after": 0.19895, "en
+=== tv5-2 20:06:01
+BENCH {"tag": "tv5-2", "step_s": 0.7448, "samples_per_s": 171.9, "batch": 128, "data_s_per_batch": 1.1633, "warmup_s": 98.7, "held_loss_after": 0.19859, "env": 
+=== tv7-2 20:09:31
+BENCH {"tag": "tv7-2", "step_s": 0.7951, "samples_per_s": 161.0, "batch": 128, "data_s_per_batch": 1.1832, "warmup_s": 94.9, "held_loss_after": 0.20029, "env": 
+=== done 20:13:02
