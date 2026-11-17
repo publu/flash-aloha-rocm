@@ -199,3 +199,77 @@ def install(stem_only=False):
 _mode = os.environ.get('FLASH_ROCM_KERNELS')
 if _mode in ('1', 'stem'):
     install(stem_only=_mode == 'stem')
+
+
+# ---- Recipe experiment (NOT same math): FLASH_FREEZE_BACKBONE=1 keeps the ResNet camera backbones at their
+# ImageNet weights (requires_grad=False) so the backbone backward pass is skipped. Flash's ACT optimizer already
+# filters out params without requires_grad. Applied right after ACTPolicy.load_pretrained_backbone().
+def _install_freeze_hook():
+    import importlib.abc, importlib.util, sys
+
+    def patch(mod):
+        cls = getattr(mod, 'ACTPolicy', None)
+        if cls is None or getattr(cls, '_flash_freeze_patched', False):
+            return
+        orig = cls.load_pretrained_backbone
+
+        def load_pretrained_backbone(self, *a, **kw):
+            out = orig(self, *a, **kw)
+            n = 0
+            for name, p in self.model.named_parameters():
+                if 'backbone' in name:
+                    p.requires_grad_(False); n += p.numel()
+            print(f'[flash_rocm_kernels] FROZEN backbones: {n/1e6:.1f}M params (requires_grad=False)', flush=True)
+            return out
+        cls.load_pretrained_backbone = load_pretrained_backbone
+        cls._flash_freeze_patched = True
+
+    if 'policy.act' in sys.modules:
+        patch(sys.modules['policy.act']); return
+
+    class Finder(importlib.abc.MetaPathFinder):
+        def find_spec(self, name, path, target=None):
+            if name != 'policy.act':
+                return None
+            sys.meta_path.remove(self)
+            spec = importlib.util.find_spec(name)
+            sys.meta_path.insert(0, self)
+            if spec is None or spec.loader is None:
+                return spec
+            loader = spec.loader
+            orig_exec = loader.exec_module
+
+            def exec_module(module):
+                orig_exec(module); patch(module)
+            loader.exec_module = exec_module
+            return spec
+    sys.meta_path.insert(0, Finder())
+
+
+if os.environ.get('FLASH_FREEZE_BACKBONE') == '1':
+    _install_freeze_hook()
+
+
+# ---- FLASH_CPU_SPLIT=1: give the training process (which launches every GPU kernel) its own CPUs. Of the CPUs this
+# process is allowed (e.g. 24-31 while the robot is active), the main process takes the last two and dataloader
+# workers / other children take the rest. Never widens the allowed set.
+def _cpu_split():
+    # the full set the trainer started with (children inherit the main process's narrowed set, so it is recorded)
+    rec = os.environ.get('_FLASH_CPU_SPLIT_ALL')
+    allowed = sorted(int(c) for c in rec.split(',')) if rec else sorted(os.sched_getaffinity(0))
+    if len(allowed) < 4:
+        return
+    os.environ['_FLASH_CPU_SPLIT_ALL'] = ','.join(map(str, allowed))
+    argv = getattr(__import__('sys'), 'orig_argv', [])
+    spawned = '--multiprocessing-fork' in argv or any(a.startswith('from multiprocessing') for a in argv)
+    child = spawned or os.environ.get('_FLASH_CPU_SPLIT_MAIN') not in (None, str(os.getpid()))
+    if child:
+        target = allowed[:-2]
+    else:
+        target = allowed[-2:]
+        os.environ['_FLASH_CPU_SPLIT_MAIN'] = str(os.getpid())   # exec keeps the pid: re-exec'd trainer stays main
+    os.sched_setaffinity(0, target)
+
+
+if os.environ.get('FLASH_CPU_SPLIT') == '1':
+    _cpu_split()

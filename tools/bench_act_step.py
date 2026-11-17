@@ -17,7 +17,7 @@ REPO = Path(__file__).resolve().parents[1] / 'repo'
 sys.path[:0] = [str(REPO / 'src'), str(REPO / 'scripts')]
 
 own = {'--steps': 100, '--warmup': 15, '--data-batches': 12, '--tag': 'run', '--out': str(REPO.parent / 'logs' / 'bench.jsonl')}
-flags = {'--profile': False}
+flags = {'--profile': False, '--fresh': False}
 argv, rest = sys.argv[1:], []
 i = 0
 while i < len(argv):
@@ -65,9 +65,14 @@ def bench(train_dataloader, val_dataloader, config, stats=None):
     torch.cuda.synchronize(); warm_s = time.perf_counter() - t0
 
     n = int(own['--steps'])
+    wait_s = [0.0]
     t0 = time.perf_counter()
     for k in range(n):
-        step(batches[k % len(batches)])
+        if flags['--fresh']:  # like the real loop: a new batch from the dataloader every step, copied to GPU
+            tw = time.perf_counter(); b = next(it); wait_s[0] += time.perf_counter() - tw
+            step(tuple(t.cuda(non_blocking=True) for t in b))
+        else:
+            step(batches[k % len(batches)])
     torch.cuda.synchronize(); step_s = (time.perf_counter() - t0) / n
 
     prof_rows = None
@@ -76,7 +81,7 @@ def bench(train_dataloader, val_dataloader, config, stats=None):
         from torch.profiler import profile, ProfilerActivity
         with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as p:
             for k in range(10):
-                step(batches[k % len(batches)])
+                step(tuple(t.cuda(non_blocking=True) for t in next(it)) if flags['--fresh'] else batches[k % len(batches)])
             torch.cuda.synchronize()
         cats = {}
         tot = 0.0
@@ -101,7 +106,7 @@ def bench(train_dataloader, val_dataloader, config, stats=None):
         ktot = sum(e.self_device_time_total for e in kern)
         prof_rows['_kernel_ms_per_step'] = round(ktot / 10 / 1000, 1)
         prof_rows['_kernels'] = [(e.key[:90], round(e.self_device_time_total / 10 / 1000, 2), e.count // 10)
-                                 for e in sorted(kern, key=lambda e: -e.self_device_time_total)[:30]]
+                                 for e in sorted(kern, key=lambda e: -e.self_device_time_total)[:400]]
         prof_rows['_top'] = [(e.key[:70], round((getattr(e, 'self_device_time_total', 0) or 0) / 10 / 1000, 2)) for e in top]
       except Exception as exc:
         prof_rows = {'error': repr(exc)[:300]}
@@ -113,7 +118,7 @@ def bench(train_dataloader, val_dataloader, config, stats=None):
         held_loss = float(T.forward_pass(held, policy, 0)['loss'].float())
 
     res = dict(tag=own['--tag'], step_s=round(step_s, 4), samples_per_s=round(int(held[0].shape[0]) / step_s, 1), batch=int(held[0].shape[0]),
-               data_s_per_batch=round(data_s, 4), warmup_s=round(warm_s, 1), held_loss_after=round(held_loss, 5),
+               data_s_per_batch=round(data_s, 4), loader_wait_s=round(wait_s[0] / n, 4), warmup_s=round(warm_s, 1), held_loss_after=round(held_loss, 5),
                env={k: v for k, v in os.environ.items() if k.startswith(('PYTORCH_TUNABLEOP', 'MIOPEN', 'TORCH_ROCM', 'HIPBLASLT', 'TORCH_BLAS'))},
                compile=config.get('compile'), compile_mode=config.get('compile_mode'), profile=prof_rows)
     print('BENCH', json.dumps(res), flush=True)

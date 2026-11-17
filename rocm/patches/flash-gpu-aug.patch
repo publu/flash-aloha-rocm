@@ -1,0 +1,180 @@
+diff --git a/src/policy/gpu_augment.py b/src/policy/gpu_augment.py
+new file mode 100644
+index 0000000..62b3379
+--- /dev/null
++++ b/src/policy/gpu_augment.py
+@@ -0,0 +1,121 @@
++"""GPU version of EpisodicDataset's training augmentation (FLASH_GPU_AUG=1).
++
++CPU original, per camera image: T.Compose([ToImage(), RandomCrop((int(.95*H), int(.95*W))), Resize((H, W))]) on a
++float [0,1] CHW frame. Here the dataset ships uint8 frames; this module does /255 (bit-identical to the CPU's
++float32 /255, via a lookup table) and, in training, the same random crop + bilinear resize for the whole batch on the GPU, with one
++independent crop offset per (sample, camera) like the CPU loop. The resize reproduces PyTorch's bilinear upsample
++(align_corners=False, source index clamped at 0, same lerp order); upsampling, so antialias has no effect.
++"""
++import torch
++
++RATIO = 0.95
++
++
++_LUT = {}
++
++
++def to_float(images_u8):
++    """Exactly the CPU's np.float32(u8) / np.float32(255) (a 256-entry table; GPU division rounds differently)."""
++    lut = _LUT.get(images_u8.device)
++    if lut is None:
++        import numpy as np
++        lut = _LUT[images_u8.device] = torch.from_numpy(
++            np.arange(256, dtype=np.float32) / np.float32(255.0)).to(images_u8.device)
++    return lut[images_u8.long()]
++
++
++def _axis(out_len, crop_len, device):
++    scale = crop_len / out_len
++    src = ((torch.arange(out_len, device=device, dtype=torch.float32) + 0.5) * scale - 0.5).clamp_(min=0)
++    i0 = src.floor().long()
++    lam = src - i0
++    i1 = torch.clamp(i0 + 1, max=crop_len - 1)
++    return i0, i1, lam
++
++
++def crop_resize(img, top, left, ch, cw):
++    """img (N, C, H, W) float; top/left (N,) long; returns (N, C, H, W): crop [top:top+ch, left:left+cw] resized back."""
++    N, C, H, W = img.shape
++    y0, y1, ly = _axis(H, ch, img.device)
++    x0, x1, lx = _axis(W, cw, img.device)
++    Y0 = (top[:, None] + y0[None]).view(N, 1, H, 1).expand(N, C, H, W)
++    Y1 = (top[:, None] + y1[None]).view(N, 1, H, 1).expand(N, C, H, W)
++    r0 = img.gather(2, Y0)
++    r1 = img.gather(2, Y1)
++    X0 = (left[:, None] + x0[None]).view(N, 1, 1, W).expand(N, C, H, W)
++    X1 = (left[:, None] + x1[None]).view(N, 1, 1, W).expand(N, C, H, W)
++    lx = lx.view(1, 1, 1, W)
++    ly = ly.view(1, 1, H, 1)
++    # PyTorch upsample_bilinear2d: h0l * (w0l * v00 + w1l * v01) + h1l * (w0l * v10 + w1l * v11)
++    top_row = (1 - lx) * r0.gather(3, X0) + lx * r0.gather(3, X1)
++    bot_row = (1 - lx) * r1.gather(3, X0) + lx * r1.gather(3, X1)
++    return (1 - ly) * top_row + ly * bot_row
++
++
++def augment(images, generator=None):
++    """images (B, cams, C, H, W) float on GPU -> randomly cropped (95%) and resized, one crop per (sample, camera)."""
++    B, K, C, H, W = images.shape
++    ch, cw = int(RATIO * H), int(RATIO * W)
++    flat = images.reshape(B * K, C, H, W)
++    top = torch.randint(0, H - ch + 1, (B * K,), device=images.device, generator=generator)
++    left = torch.randint(0, W - cw + 1, (B * K,), device=images.device, generator=generator)
++    return crop_resize(flat, top, left, ch, cw).view(B, K, C, H, W)
++
++
++# ---- fused path: one Triton kernel reads uint8 once, applies the exact /255 table, crop + bilinear, writes float32
++try:
++    import triton
++    import triton.language as tl
++
++    @triton.jit
++    def _crop_resize_u8_kernel(src, dst, lut, tops, lefts, y0p, y1p, lyp, x0p, x1p, lxp, H, W,
++                               C: tl.constexpr, AUG: tl.constexpr, BLOCK: tl.constexpr):
++        img = tl.program_id(1)                     # flattened (sample, camera)
++        offs = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
++        n = H * W
++        m = offs < n
++        y = offs // W
++        x = offs % W
++        base = img * C * n
++        if AUG:
++            t = tl.load(tops + img)
++            l = tl.load(lefts + img)
++            ya = tl.load(y0p + y, mask=m, other=0) + t
++            yb = tl.load(y1p + y, mask=m, other=0) + t
++            ly = tl.load(lyp + y, mask=m, other=0.0)
++            xa = tl.load(x0p + x, mask=m, other=0) + l
++            xb = tl.load(x1p + x, mask=m, other=0) + l
++            lx = tl.load(lxp + x, mask=m, other=0.0)
++            for c in tl.static_range(C):
++                cb = base + c * n
++                v00 = tl.load(lut + tl.load(src + cb + ya * W + xa, mask=m, other=0).to(tl.int32))
++                v01 = tl.load(lut + tl.load(src + cb + ya * W + xb, mask=m, other=0).to(tl.int32))
++                v10 = tl.load(lut + tl.load(src + cb + yb * W + xa, mask=m, other=0).to(tl.int32))
++                v11 = tl.load(lut + tl.load(src + cb + yb * W + xb, mask=m, other=0).to(tl.int32))
++                top_row = (1 - lx) * v00 + lx * v01
++                bot_row = (1 - lx) * v10 + lx * v11
++                tl.store(dst + cb + offs, (1 - ly) * top_row + ly * bot_row, mask=m)
++        else:
++            for c in tl.static_range(C):
++                cb = base + c * n
++                v = tl.load(lut + tl.load(src + cb + offs, mask=m, other=0).to(tl.int32))
++                tl.store(dst + cb + offs, v, mask=m)
++
++    def fused(images_u8, aug, generator=None):
++        """images_u8 (B, cams, C, H, W) uint8 on GPU -> float32 [0,1], cropped+resized if aug."""
++        B, K, C, H, W = images_u8.shape
++        x = images_u8.contiguous()
++        out = torch.empty(x.shape, device=x.device, dtype=torch.float32)
++        to_float(x[:1, :1, :1, :1, :1])          # builds the table
++        lut = _LUT[x.device]
++        ch, cw = int(RATIO * H), int(RATIO * W)
++        y0, y1, ly = _axis(H, ch, x.device)
++        x0, x1, lx = _axis(W, cw, x.device)
++        top = torch.randint(0, H - ch + 1, (B * K,), device=x.device, generator=generator)
++        left = torch.randint(0, W - cw + 1, (B * K,), device=x.device, generator=generator)
++        BLOCK = 1024
++        _crop_resize_u8_kernel[(triton.cdiv(H * W, BLOCK), B * K)](
++            x, out, lut, top, left, y0, y1, ly, x0, x1, lx, H, W, C=C, AUG=bool(aug), BLOCK=BLOCK, num_warps=4)
++        return out, top, left
++except ImportError:  # pragma: no cover
++    fused = None
+diff --git a/src/policy/imitate_episodes_train.py b/src/policy/imitate_episodes_train.py
+index d306591..11c504a 100644
+--- a/src/policy/imitate_episodes_train.py
++++ b/src/policy/imitate_episodes_train.py
+@@ -503,6 +503,9 @@ def forward_pass(data, policy, image_history_len=0, proprio_noise_scale=0.0, qpo
+     """
+     standard_image_processing.require_single_frame({"image_history_len": image_history_len})
+     image_data, qpos_data, action_data, is_pad = (t.cuda(non_blocking=True) for t in data)
++    if image_data.dtype == torch.uint8:  # FLASH_GPU_AUG=1 batches: exact /255 here, training crop+resize on GPU
++        from policy import gpu_augment
++        image_data = gpu_augment.fused(image_data, aug=policy.training)[0]
+ 
+     # Add noise to proprioception (qpos) during training to encourage visual reliance
+     # Noise is scaled by the dataset's qpos standard deviation per dimension
+diff --git a/src/policy/training_utils.py b/src/policy/training_utils.py
+index b7ed665..1178f48 100644
+--- a/src/policy/training_utils.py
++++ b/src/policy/training_utils.py
+@@ -465,8 +465,15 @@ class EpisodicDataset(torch.utils.data.Dataset):
+         # Shared deterministic resize has already run above, as on the direct runner.
+         image_spec = standard_image_processing.ImageSpec(
+             color="BGR" if self.aloha else "RGB", grayscale=self.grayscale)
++        # FLASH_GPU_AUG=1: ship uint8 CHW frames; /255 and the training crop+resize run batched on the GPU
++        # (policy/gpu_augment.py, applied in forward_pass). Off: the original CPU float32 path below.
++        gpu_aug = os.environ.get('FLASH_GPU_AUG') == '1' and self.data_aug and not self.grayscale
+         for cam_name in image_dict:
+-            current = standard_image_processing.image_to_chw(image_dict[cam_name], image_spec)
++            if gpu_aug:
++                current = np.ascontiguousarray(
++                    standard_image_processing.prepare_image(image_dict[cam_name], image_spec).transpose(2, 0, 1))
++            else:
++                current = standard_image_processing.image_to_chw(image_dict[cam_name], image_spec)
+             # Training-only augmentation starts AFTER deterministic preprocessing.
+             order = np.random.permutation(3) if self.randomize_color else None
+             def augment(frame):
+@@ -474,7 +481,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
+                     frame = np.flip(frame, axis=-1).copy()
+                 if order is not None:
+                     frame = frame[order]
+-                if self.data_aug:
++                if self.data_aug and not gpu_aug:
+                     frame = self.transformations(torch.from_numpy(frame).float())
+                 return frame
+             image_dict[cam_name] = augment(current)
+@@ -486,7 +493,7 @@ class EpisodicDataset(torch.utils.data.Dataset):
+         for cam_name in self.camera_names:
+             all_cam_images.append(image_dict[cam_name])
+                 
+-        all_cam_images = np.stack(all_cam_images, axis=0, dtype=np.float32)
++        all_cam_images = np.stack(all_cam_images, axis=0, dtype=np.uint8 if gpu_aug else np.float32)
+ 
+         # construct observations
+         image_data = torch.from_numpy(all_cam_images)
