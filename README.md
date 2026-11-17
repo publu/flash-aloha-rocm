@@ -1,8 +1,7 @@
 # Flash ALOHA ACT on AMD Strix Halo (gfx1151): ROCm setup, YAM data, faster kernels
 
 Working notes and code for training [Flash ALOHA](https://github.com/JohnYao93/flash-aloha) ACT policies on a
-Radeon 8060S (gfx1151, ROCm nightly torch 2.10) with our own YAM robot recordings. The upstream repo is cloned
-separately into `repo/` and is not modified; nothing here moves a robot.
+Radeon 8060S (gfx1151, ROCm nightly torch 2.10) with our own YAM robot recordings.
 
 ## Result
 
